@@ -117,7 +117,7 @@ test('corrupt state is preserved and blocks monitoring', async (t) => {
   assert.equal(f.events.length, 0);
 });
 
-test('HTTP health check accepts only 2xx, rejects redirects, and times out', async (t) => {
+test('HTTP health check accepts only 2xx, rejects redirects, and times out', { timeout: 10000 }, async (t) => {
   let redirectTargetHits = 0;
   const url = await serverFor(t, (req, res) => {
     if (req.url === '/ok') { res.writeHead(204); return res.end(); }
@@ -126,11 +126,15 @@ test('HTTP health check accepts only 2xx, rejects redirects, and times out', asy
     if (req.url === '/target') { redirectTargetHits++; return res.end('secret'); }
     // /hang deliberately never responds.
   });
-  const check = (path) => checkHealth({ endpoint: `${url}${path}`, timeoutMs: 100 });
+  // Cold fetch initialization can exceed 100 ms on a shared CI runner. Only
+  // the deliberately unresponsive route should use the short request deadline.
+  const check = (path, timeoutMs = 5000) => checkHealth({ endpoint: `${url}${path}`, timeoutMs });
   assert.equal(await check('/ok'), true);
   assert.equal(await check('/fail'), false);
   assert.equal(await check('/redirect'), false);
-  assert.equal(await check('/hang'), false);
+  const started = performance.now();
+  assert.equal(await check('/hang', 100), false);
+  assert.ok(performance.now() - started >= 80, 'the unresponsive request must wait for its deadline');
   assert.equal(redirectTargetHits, 0);
 });
 
