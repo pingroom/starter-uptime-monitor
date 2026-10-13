@@ -1,0 +1,16 @@
+{
+  "name": "pingroom-starter-uptime-monitor",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Monitor an HTTP endpoint and send PingRoom alerts when its health changes.",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node scripts/monitor.mjs",
+    "pair": "node scripts/pair.mjs",
+    "demo": "node scripts/demo.mjs",
+    "test": "node --test"
+  },
+  "dependencies": { "@pingroom/cli": "0.13.0" }
+}
